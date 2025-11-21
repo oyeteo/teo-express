@@ -49,10 +49,28 @@ export default function DownloadPage() {
     }
   }
 
-  const handleDownload = () => {
-    if (fileInfo?.fileUrl) {
-      window.open(fileInfo.fileUrl, '_blank')
+  const handleDownload = async () => {
+    if (!fileInfo?.fileUrl) return
+
+    // Try to verify the URL is still valid by making a HEAD request
+    try {
+      const response = await fetch(fileInfo.fileUrl, { method: 'HEAD' })
+      if (!response.ok) {
+        if (response.status === 403 || response.status === 401) {
+          // URL expired or unauthorized - need to re-authenticate
+          setError('Download link has expired. Please enter your password again.')
+          setAuthenticated(false)
+          setFileInfo(null)
+          return
+        }
+      }
+    } catch (error) {
+      // If check fails, still try to open (might be CORS issue)
+      console.warn('Could not verify URL, attempting download anyway:', error)
     }
+
+    // Open the download URL
+    window.open(fileInfo.fileUrl, '_blank')
   }
 
   const getFileNameFromUrl = (url: string) => {
