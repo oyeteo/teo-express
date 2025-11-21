@@ -1,0 +1,51 @@
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: #ffffff;
+  color: #ff0000;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Red color scheme */
+:root {
+  --vintage-red: #ff0000;
+  --vintage-red-dark: #cc0000;
+  --vintage-red-light: #ff3333;
+  --white: #FFFFFF;
+  --gray-light: #F5F5F5;
+  --gray: #E0E0E0;
+}
+
+/* Monospace font for HUD style */
+@font-face {
+  font-family: 'HUD';
+  src: local('Courier New'), local('Monaco'), local('Consolas');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.hud-text {
+  font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
