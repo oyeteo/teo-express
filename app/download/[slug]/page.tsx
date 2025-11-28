@@ -18,6 +18,7 @@ export default function DownloadPage() {
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [authenticated, setAuthenticated] = useState(false)
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -52,6 +53,9 @@ export default function DownloadPage() {
   const handleDownload = async () => {
     if (!fileInfo?.fileUrl) return
 
+    setDownloading(true)
+    setError(null)
+
     // Try to verify the URL is still valid by making a HEAD request
     try {
       const response = await fetch(fileInfo.fileUrl, { method: 'HEAD' })
@@ -61,16 +65,35 @@ export default function DownloadPage() {
           setError('Download link has expired. Please enter your password again.')
           setAuthenticated(false)
           setFileInfo(null)
+          setDownloading(false)
           return
         }
       }
     } catch (error) {
-      // If check fails, still try to open (might be CORS issue)
+      // If check fails, still try to download (might be CORS issue)
       console.warn('Could not verify URL, attempting download anyway:', error)
     }
 
-    // Open the download URL
-    window.open(fileInfo.fileUrl, '_blank')
+    // Create a temporary anchor element and trigger download
+    // This approach avoids popup blockers and provides better UX
+    try {
+      const fileName = getFileNameFromUrl(fileInfo.fileUrl)
+      const link = document.createElement('a')
+      link.href = fileInfo.fileUrl
+      link.download = fileName
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      
+      // Append to body, click, then remove
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Error initiating download:', error)
+      setError('Failed to start download. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   const getFileNameFromUrl = (url: string) => {
@@ -255,32 +278,38 @@ export default function DownloadPage() {
       {/* Download Button */}
       <button
         onClick={handleDownload}
+        disabled={downloading}
         style={{
           padding: '1rem 3rem',
-          backgroundColor: '#ff0000',
+          backgroundColor: downloading ? '#CCCCCC' : '#ff0000',
           color: '#FFFFFF',
           border: 'none',
           borderRadius: '4px',
           fontSize: '1.125rem',
           fontWeight: '700',
-          cursor: 'pointer',
+          cursor: downloading ? 'not-allowed' : 'pointer',
           transition: 'all 0.2s ease',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
           fontFamily: "'Courier New', 'Monaco', 'Consolas', monospace",
+          opacity: downloading ? 0.7 : 1,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#cc0000'
-          e.currentTarget.style.transform = 'translateY(-2px)'
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 0, 0, 0.3)'
+          if (!downloading) {
+            e.currentTarget.style.backgroundColor = '#cc0000'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 0, 0, 0.3)'
+          }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#ff0000'
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = 'none'
+          if (!downloading) {
+            e.currentTarget.style.backgroundColor = '#ff0000'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = 'none'
+          }
         }}
       >
-        Download File
+        {downloading ? 'Downloading...' : 'Download File'}
       </button>
     </main>
   )
