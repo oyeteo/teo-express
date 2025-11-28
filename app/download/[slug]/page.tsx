@@ -83,14 +83,6 @@ export default function DownloadPage() {
     }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-  }
-
   if (!authenticated) {
     return (
       <main style={{
@@ -180,7 +172,6 @@ export default function DownloadPage() {
   }
 
   const fileName = fileInfo ? getFileNameFromUrl(fileInfo.fileUrl) : 'file'
-  const fileSize = fileInfo ? formatFileSize(fileInfo.fileSize) : 'N/A'
 
   return (
     <main style={{
@@ -243,15 +234,6 @@ export default function DownloadPage() {
             </div>
             <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
               {fileName}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{ color: '#000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-              FILE SIZE
-            </div>
-            <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
-              {fileSize}
             </div>
           </div>
 
