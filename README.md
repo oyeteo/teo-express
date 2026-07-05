@@ -43,6 +43,49 @@ Use a private storage bucket. This is required. TEO.EXPRESS stores internal `sup
 
 The schema and migration revoke public table access for `anon` and `authenticated`; server routes and the CLI use the service role key from trusted environments only.
 
+### Supabase CLI
+
+This repo includes the Supabase CLI as a dev dependency and keeps CLI migrations in `supabase/migrations`.
+
+Authenticate once:
+
+```bash
+npm run supabase:login
+```
+
+For non-interactive shells, create a Supabase access token and pass it without committing it:
+
+```bash
+npm run supabase:login -- --token "$SUPABASE_ACCESS_TOKEN"
+```
+
+Link this checkout to the project in `.env.local`:
+
+```bash
+npm run supabase:link
+```
+
+`supabase:link` derives the project ref from `NEXT_PUBLIC_SUPABASE_URL`. If you need to override it, set `SUPABASE_PROJECT_REF`.
+
+Common project commands:
+
+```bash
+npm run supabase:projects
+npm run supabase:migrations
+npm run supabase:db:push
+npm run supabase:db:pull -- --schema public
+```
+
+Local Supabase commands:
+
+```bash
+npm run supabase:start
+npm run supabase:status
+npm run supabase:stop
+```
+
+The local config creates a private `client-files` storage bucket, matching `.env.local.example`. If your private `.env.local` uses a different `SUPABASE_STORAGE_BUCKET`, add or rename a matching `[storage.buckets.<bucket>]` entry in `supabase/config.toml` before using `npm run supabase:start`. Keep the production bucket private too.
+
 ## Sender CLI
 
 The fastest sender flow is the CLI. It is intended for trusted internal operators because it reads `SUPABASE_SERVICE_ROLE_KEY` from `.env.local`.

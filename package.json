@@ -7,6 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "supabase": "supabase",
+    "supabase:login": "supabase login",
+    "supabase:link": "node scripts/link-supabase.mjs",
+    "supabase:projects": "supabase projects list",
+    "supabase:status": "supabase status",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:db:push": "supabase db push",
+    "supabase:db:pull": "supabase db pull",
+    "supabase:migrations": "supabase migration list",
     "transfer:create": "node scripts/create-transfer.mjs",
     "test:transfer-cli": "node scripts/check-transfer-cli.mjs",
     "test:security-static": "node scripts/check-security-static.mjs"
@@ -26,6 +36,7 @@
     "@types/react-dom": "^18.2.0",
     "eslint": "^8.0.0",
     "eslint-config-next": "15.5.20",
+    "supabase": "^2.109.0",
     "typescript": "^5.0.0"
   },
   "overrides": {
