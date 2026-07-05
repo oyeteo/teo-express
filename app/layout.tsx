@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'TEO.EXPRESS - Private File Sharing',
-  description: 'Secure file sharing platform',
+  title: 'TEO.EXPRESS',
+  description: 'Fast private file transfers from Teo.',
 }
 
 export default function RootLayout({
@@ -20,4 +20,3 @@ export default function RootLayout({
     </html>
   )
 }
-
