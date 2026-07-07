@@ -72,7 +72,7 @@ export default function DownloadPage() {
     setFiles(Array.isArray(data.files) ? data.files : [])
   }
 
-  const loadTransfer = useCallback(async (password?: string): Promise<boolean> => {
+  const loadTransfer = useCallback(async (password?: string): Promise<TransferResponse | null> => {
     const response = await fetch(`/api/download/verify/${slug}`, {
       method: password ? 'POST' : 'GET',
       headers: password ? { 'Content-Type': 'application/json' } : undefined,
@@ -82,10 +82,10 @@ export default function DownloadPage() {
     const data = (await response.json()) as TransferResponse
     if (!response.ok) {
       setError(data.error || 'This transfer is unavailable.')
-      return false
+      return null
     }
     applyResponse(data)
-    return true
+    return data
   }, [slug])
 
   useEffect(() => {
@@ -121,26 +121,7 @@ export default function DownloadPage() {
     }
   }
 
-  const triggerDownload = async (file: DownloadFile) => {
-    setDownloadingId(file.id)
-    setError(null)
-
-    try {
-      const response = await fetch(file.fileUrl, { method: 'HEAD' })
-      if (response.status === 401 || response.status === 403) {
-        const refreshed = await loadTransfer(requiresAccessCode ? accessCode : undefined)
-        setError(
-          refreshed
-            ? 'Secure links refreshed. Select Download again.'
-            : 'This signed download expired. Refresh the page or ask the sender for a new transfer.'
-        )
-        setDownloadingId(null)
-        return
-      }
-    } catch {
-      // Some storage providers block HEAD from browsers; the link click below is still valid.
-    }
-
+  const startBrowserDownload = (file: DownloadFile) => {
     const link = document.createElement('a')
     link.href = file.fileUrl
     link.download = file.fileName
@@ -149,7 +130,25 @@ export default function DownloadPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    setDownloadingId(null)
+  }
+
+  const triggerDownload = async (file: DownloadFile) => {
+    setDownloadingId(file.id)
+    setError(null)
+
+    try {
+      const refreshed = await loadTransfer(requiresAccessCode ? accessCode : undefined)
+      const downloadFile = refreshed?.files?.find((item) => item.id === file.id)
+      if (!downloadFile) {
+        setError('This signed download expired. Refresh the page or ask the sender for a new transfer.')
+        return
+      }
+      startBrowserDownload(downloadFile)
+    } catch {
+      setError('Could not prepare a fresh download link. Please try again.')
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   const locked = requiresAccessCode && files.length === 0
