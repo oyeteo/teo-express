@@ -117,6 +117,11 @@ function storageObjectRef(bucket, storagePath) {
   return `supabase://${bucket}/${storagePath}`
 }
 
+function contentTypeFor(name) {
+  const extension = name.split('.').pop().toLowerCase()
+  return ({ mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', pdf: 'application/pdf', zip: 'application/zip' })[extension] || 'application/octet-stream'
+}
+
 async function uploadFile({ supabaseUrl, serviceKey, bucket, filePath }) {
   const absolute = resolve(process.cwd(), filePath)
   const stat = statSync(absolute)
@@ -130,7 +135,7 @@ async function uploadFile({ supabaseUrl, serviceKey, bucket, filePath }) {
     headers: {
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': contentTypeFor(name),
       'x-upsert': 'false',
     },
     body: createReadStream(absolute),

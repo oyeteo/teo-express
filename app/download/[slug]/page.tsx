@@ -10,6 +10,8 @@ type DownloadFile = {
   fileName: string
   fileSize: number
   fileUrl: string
+  previewUrl: string
+  mimeType: string | null
 }
 
 type TransferResponse = {
@@ -55,7 +57,6 @@ export default function DownloadPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [checkingCode, setCheckingCode] = useState(false)
-  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   const fileCountLabel = useMemo(() => {
     if (error && files.length === 0) return 'Unavailable'
@@ -107,6 +108,16 @@ export default function DownloadPage() {
     }
   }, [loadTransfer])
 
+  useEffect(() => {
+    if (!files.length) return
+    const timer = window.setInterval(() => {
+      void loadTransfer(requiresAccessCode ? accessCode : undefined).catch(() => {
+        setError('Could not refresh your links. Reload this page before downloading.')
+      })
+    }, 45 * 60 * 1000)
+    return () => window.clearInterval(timer)
+  }, [files.length, loadTransfer, requiresAccessCode, accessCode])
+
   const unlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setCheckingCode(true)
@@ -118,36 +129,6 @@ export default function DownloadPage() {
       setError('Could not verify the access code. Please try again.')
     } finally {
       setCheckingCode(false)
-    }
-  }
-
-  const startBrowserDownload = (file: DownloadFile) => {
-    const link = document.createElement('a')
-    link.href = file.fileUrl
-    link.download = file.fileName
-    link.target = '_blank'
-    link.rel = 'noopener noreferrer'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  const triggerDownload = async (file: DownloadFile) => {
-    setDownloadingId(file.id)
-    setError(null)
-
-    try {
-      const refreshed = await loadTransfer(requiresAccessCode ? accessCode : undefined)
-      const downloadFile = refreshed?.files?.find((item) => item.id === file.id)
-      if (!downloadFile) {
-        setError('This signed download expired. Refresh the page or ask the sender for a new transfer.')
-        return
-      }
-      startBrowserDownload(downloadFile)
-    } catch {
-      setError('Could not prepare a fresh download link. Please try again.')
-    } finally {
-      setDownloadingId(null)
     }
   }
 
@@ -237,14 +218,20 @@ export default function DownloadPage() {
                     <span className="transfer-file__name">{file.fileName}</span>
                     <span className="transfer-file__size">{formatBytes(file.fileSize)}</span>
                   </div>
-                  <button
+                  <a
                     className="transfer-button transfer-button--compact"
-                    type="button"
-                    onClick={() => void triggerDownload(file)}
-                    disabled={downloadingId === file.id}
+                    href={file.fileUrl}
+                    download={file.fileName}
                   >
-                    {downloadingId === file.id ? 'Starting' : 'Download'}
-                  </button>
+                    Download
+                  </a>
+                  {file.mimeType?.startsWith('video/') ? (
+                    <video className="transfer-video" controls playsInline preload="metadata"
+                      aria-label={'Watch ' + file.fileName} src={file.previewUrl} />
+                  ) : null}
+                  {file.mimeType === 'application/pdf' ? (
+                    <a className="transfer-preview-link" href={file.previewUrl}>Read report</a>
+                  ) : null}
                 </li>
               ))}
             </ul>

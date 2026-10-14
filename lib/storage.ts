@@ -68,7 +68,8 @@ export function isPrivateStorageObjectRef(url: string, expectedBucket?: string):
  */
 export async function generateSignedUrl(
   fileUrl: string,
-  expiresIn: number = 3600
+  expiresIn: number = 3600,
+  download?: string
 ): Promise<string | null> {
   try {
     const parsed = parseStorageUrl(fileUrl)
@@ -80,7 +81,7 @@ export async function generateSignedUrl(
     const { data, error } = await supabaseAdmin
       .storage
       .from(parsed.bucket)
-      .createSignedUrl(parsed.path, expiresIn)
+      .createSignedUrl(parsed.path, expiresIn, { download })
     
     if (error) {
       console.error('Error creating signed URL:', error)
