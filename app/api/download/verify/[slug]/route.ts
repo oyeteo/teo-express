@@ -74,18 +74,28 @@ async function buildDownloadResponse(slug: string, request: NextRequest, passwor
     fileName: string
     fileSize: number
     fileUrl: string
+    previewUrl: string
+    mimeType: string | null
   }> = []
 
   for (const f of attachments) {
-    const signedUrl = await generateSignedUrl(f.url, 3600)
-    if (!signedUrl) {
+    const fileName = f.name || getFileNameFromUrl(f.url)
+    const [signedUrl, previewUrl] = await Promise.all([
+      generateSignedUrl(f.url, 3600, fileName),
+      generateSignedUrl(f.url, 3600),
+    ])
+    if (!signedUrl || !previewUrl) {
       return json({ error: 'Failed to generate secure download link' }, 500)
     }
 
     let fileSize = 0
+    let mimeType: string | null = null
     try {
       const metadata = await getFileMetadata(f.url)
-      if (metadata) fileSize = metadata.size
+      if (metadata) {
+        fileSize = metadata.size
+        mimeType = metadata.mimeType
+      }
     } catch {
       // keep 0
     }
@@ -93,9 +103,11 @@ async function buildDownloadResponse(slug: string, request: NextRequest, passwor
     files.push({
       id: f.id,
       name: f.name,
-      fileName: f.name || getFileNameFromUrl(f.url),
+      fileName,
       fileSize,
       fileUrl: signedUrl,
+      previewUrl,
+      mimeType,
     })
   }
 
