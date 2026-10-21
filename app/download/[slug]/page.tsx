@@ -73,8 +73,8 @@ export default function DownloadPage() {
     setFiles(Array.isArray(data.files) ? data.files : [])
   }
 
-  const loadTransfer = useCallback(async (password?: string): Promise<TransferResponse | null> => {
-    const response = await fetch(`/api/download/verify/${slug}`, {
+  const loadTransfer = useCallback(async (password?: string, refresh = false): Promise<TransferResponse | null> => {
+    const response = await fetch(`/api/download/verify/${slug}${refresh ? '?refresh=1' : ''}`, {
       method: password ? 'POST' : 'GET',
       headers: password ? { 'Content-Type': 'application/json' } : undefined,
       body: password ? JSON.stringify({ password }) : undefined,
@@ -111,7 +111,7 @@ export default function DownloadPage() {
   useEffect(() => {
     if (!files.length) return
     const timer = window.setInterval(() => {
-      void loadTransfer(requiresAccessCode ? accessCode : undefined).catch(() => {
+      void loadTransfer(requiresAccessCode ? accessCode : undefined, true).catch(() => {
         setError('Could not refresh your links. Reload this page before downloading.')
       })
     }, 45 * 60 * 1000)
@@ -130,6 +130,15 @@ export default function DownloadPage() {
     } finally {
       setCheckingCode(false)
     }
+  }
+
+  const sendDownloadReceipt = (file: DownloadFile) => {
+    void fetch(`/api/download/receipt/${slug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId: file.id }),
+      keepalive: true,
+    }).catch(() => undefined)
   }
 
   const locked = requiresAccessCode && files.length === 0
@@ -222,6 +231,7 @@ export default function DownloadPage() {
                     className="transfer-button transfer-button--compact"
                     href={file.fileUrl}
                     download={file.fileName}
+                    onClick={() => sendDownloadReceipt(file)}
                   >
                     Download
                   </a>

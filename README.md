@@ -5,7 +5,8 @@ Fast private file transfers with branded recipient download pages.
 ## What It Does
 
 - Upload one or more files to Supabase Storage.
-- Create a share link for one or more recipients.
+- Create a share link; recipients are an optional label.
+- Record when the link is opened and when each file is downloaded.
 - Expire every transfer by default after 14 days.
 - Optionally protect sensitive transfers with an access code.
 - Give recipients a clean Teo-branded page with short-lived signed download URLs.
@@ -90,38 +91,45 @@ The local config creates a private `client-files` storage bucket, matching `.env
 
 The fastest sender flow is the CLI. It is intended for trusted internal operators because it reads `SUPABASE_SERVICE_ROLE_KEY` from `.env.local`.
 
-```bash
-npm run transfer:create -- \
-  --name "Acme final delivery" \
-  --to client@example.com,producer@example.com \
-  --file ./Final.mov \
-  --file ./Stems.zip
-```
-
-Add a strong access code for sensitive files:
+Link it once to make `teo-express` available globally:
 
 ```bash
-npm run transfer:create -- \
-  --name "Acme sensitive files" \
-  --to client@example.com \
-  --file ./contract.pdf \
-  --code "use-a-long-client-specific-code"
+npm link
 ```
 
-Set a custom expiry:
+When run outside this directory, the linked CLI falls back to this checkout's `.env.local`. Set `TEO_EXPRESS_ENV_FILE` to use a different config file.
+
+Send a file. The name comes from the file, the link is printed and copied to the clipboard, and nobody needs an email address:
 
 ```bash
-npm run transfer:create -- \
-  --name "Weekend review" \
-  --to client@example.com \
-  --file ./review.mp4 \
-  --days 3
+teo-express ./Final.mov
 ```
+
+Send several files under one name, with recipients as a label and an access code:
+
+```bash
+teo-express ./contract.pdf ./appendix.pdf --name "Acme sensitive files" --to client@example.com --code "long-random-code"
+```
+
+Set a custom expiry with `--days 3` or `--expires 2026-12-31T23:59:00Z`. Add `--watch` to keep the terminal open until the first download lands.
+
+Know it landed. Every open of the download page and every download click is recorded as a receipt:
+
+```bash
+teo-express ls                          # recent transfers with open/download counts
+teo-express status final-mov            # files, expiry, last open, last download, device
+teo-express watch final-mov             # waits for the first download, then sends a macOS notification
+teo-express extend final-mov --days 7   # push the expiry out
+teo-express rm final-mov                # delete the transfer and its files
+teo-express open final-mov              # open the download page in the browser
+```
+
+Every command accepts the slug or the full link. Links use `https://x.teo.fm`; set `TEO_EXPRESS_PUBLIC_URL` to point at another deployment.
 
 Validate input without Supabase credentials or uploads:
 
 ```bash
-npm run transfer:create -- --dry-run --name "Test" --to test@example.com --file ./sample.txt
+teo-express --dry-run ./sample.txt
 ```
 
 The CLI prints the recipient link and does not print secrets.
@@ -154,6 +162,12 @@ If no access code is required, the page prepares signed download links immediate
 ```bash
 npm run test:transfer-cli
 npm run build
+```
+
+Against the live site, prove the whole loop (send, page, signed download with sha256 check, receipt, status, ls, extend, rm) with a throwaway transfer:
+
+```bash
+npm run test:transfer-roundtrip
 ```
 
 `npm run lint` uses `next lint`; if the project has not been configured for ESLint yet, Next may prompt for setup instead of running non-interactively.

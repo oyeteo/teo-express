@@ -39,7 +39,6 @@ const patchSchema = z.object({
   client_name: z.string().min(1).max(200).optional(),
   client_email: z
     .string()
-    .min(3)
     .max(1000)
     .refine(isValidTransferRecipients, 'Enter one or more valid email addresses')
     .optional(),

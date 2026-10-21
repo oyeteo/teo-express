@@ -28,7 +28,7 @@ export function normalizeTransferRecipients(recipients: string[] | string): stri
 
 export function isValidTransferRecipients(recipients: string[] | string): boolean {
   const normalized = normalizeTransferRecipients(recipients)
-  if (!normalized) return false
+  if (!normalized) return true
   return normalized.split(',').every((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.trim()))
 }
 

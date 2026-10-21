@@ -176,8 +176,8 @@ export function AdminStudio() {
 
   const save = useCallback(async () => {
     if (saving || loading) return
-    if (!draft.client_name.trim() || !draft.client_email.trim()) {
-      showToast('Name and email are required', 'err')
+    if (!draft.client_name.trim()) {
+      showToast('Transfer name is required', 'err')
       return
     }
     if (!draft.files.length) {
@@ -418,11 +418,12 @@ export function AdminStudio() {
                   />
                 </div>
                 <div className="admin-field">
-                    <label htmlFor="client_email">Recipients</label>
+                    <label htmlFor="client_email">Recipients (optional)</label>
                   <input
                     id="client_email"
                     className="admin-input"
-                    type="email"
+                    type="text"
+                    placeholder="Leave empty to just share the link"
                     value={draft.client_email}
                     onChange={(e) => setDraft((d) => ({ ...d, client_email: e.target.value }))}
                     autoComplete="off"

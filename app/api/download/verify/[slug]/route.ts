@@ -3,6 +3,7 @@ import { getClientPortalBySlug, transferRequiresAccessCode, verifyPassword } fro
 import { generateSignedUrl, getFileMetadata, parseStorageUrl } from '@/lib/storage'
 import { listPortalFiles } from '@/lib/portal-model'
 import { checkRateLimit, clearRateLimit, clientIp } from '@/lib/rate-limit'
+import { recordTransferEvent } from '@/lib/transfer-events'
 
 function getFileNameFromUrl(url: string) {
   try {
@@ -22,6 +23,22 @@ function json(body: unknown, status = 200, headers: HeadersInit = {}) {
   return NextResponse.json(body, {
     status,
     headers: { 'Cache-Control': 'no-store', ...headers },
+  })
+}
+
+function isRefreshBeforeDownload(request: NextRequest): boolean {
+  return request.nextUrl.searchParams.get('refresh') === '1'
+}
+
+async function noteOpened(portalId: string, slug: string, request: NextRequest) {
+  if (isRefreshBeforeDownload(request)) return
+  const ip = clientIp(request.headers)
+  const limited = checkRateLimit(`opened:${slug}:${ip}`, 20, 10 * 60 * 1000)
+  if (!limited.ok) return
+  await recordTransferEvent({
+    portalId,
+    kind: 'opened',
+    userAgent: request.headers.get('user-agent'),
   })
 }
 
@@ -114,6 +131,8 @@ async function buildDownloadResponse(slug: string, request: NextRequest, passwor
   if (!files.length) {
     return json({ error: 'No files for this portal' }, 500)
   }
+
+  await noteOpened(portal.id, slug, request)
 
   const primary = files[0]
   return json({

@@ -30,9 +30,10 @@ const createSchema = z.object({
   client_name: z.string().min(1).max(200),
   client_email: z
     .string()
-    .min(3)
     .max(1000)
-    .refine(isValidTransferRecipients, 'Enter one or more valid email addresses'),
+    .refine(isValidTransferRecipients, 'Enter one or more valid email addresses')
+    .optional()
+    .default(''),
   password: z.string().max(200).optional(),
   /** ISO-ish string from datetime-local or Date; omitted means default expiry */
   expires_at: z.union([z.string().min(1).max(40), z.null()]).optional(),
